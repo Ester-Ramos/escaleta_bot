@@ -14,7 +14,7 @@ def get_thursday():
 
 
 def parse_message(message, section, tema):
-  parser = re.compile("== (.*?) ==\s*(- [^=]*)*", re.DOTALL)
+  parser = re.compile(".*= (.*?) =\s*(- [^=`]*)*", re.DOTALL)
 
   parsed_message = {
     section.lower(): [
@@ -22,21 +22,24 @@ def parse_message(message, section, tema):
     ] for section, contents in parser.findall(message)
   }
   print(parsed_message)
+  
+  if parsed_message[section]:
+    parsed_message[section].append(f"- {tema}")
+  
+  else:
+    parsed_message[section] = [f"- {tema}"]
 
-  parsed_message[section].append(f"- {tema}")
-
-  message = textwrap.dedent(f"""
-  ```asciidoc
-  [{get_thursday()}] """)
+  parts =["```asciidoc", f"[{get_thursday()}]"]
 
   for section, content in parsed_message.items():
-    message + f"\n== {section.upper()} =="
+    parts.append(f"= {section.upper()} =")
     for element in content:
-      message + element
+      parts.append(element)
   
-  message + "```"
+  parts.append("```")
+  print('\n'.join(parts))
 
-  return  message
+  return '\n'.join(parts)
 
 
 bot = commands.Bot(command_prefix='!')
@@ -45,10 +48,9 @@ bot = commands.Bot(command_prefix='!')
 @bot.command(name="juegos", help="Escribe aquí los temas que quieras hablar de juegos.")
 async def on_command(ctx):
   command_name, *command_args = ctx.message.content.split()
-  print(command_name)
-  print(command_args)
   
   tema = " ".join(command_args)
+  print(tema)
   
   channel = bot.get_channel(776518954461429811)
 
@@ -57,7 +59,27 @@ async def on_command(ctx):
     print(last_message.content)
     await last_message.edit(content=parse_message(last_message.content, command_name[1:].lower(), tema))
   except discord.errors.NotFound:
-    await channel.send("Prueba")
+    await channel.send(textwrap.dedent(f"""
+  ```asciidoc
+  [{get_thursday()}]
+
+  = ACTUALIDAD =
+  - Actualidad de los panas
+
+  = NOTICIAS ESPAECIALES = 
+  - 
+
+  = PELIS =
+  - 
+
+  = SERIES =
+  - 
+
+  = JUEGOS =
+  - 
+  
+  ```
+  """))
 
   
 bot.run(os.environ.get('TOKEN'))
