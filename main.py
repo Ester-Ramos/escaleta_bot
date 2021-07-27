@@ -4,6 +4,7 @@ import re
 from datetime import date, timedelta, datetime
 import textwrap
 from parser import Parser
+from keep_alive import keep_alive
 
 bot = commands.Bot(command_prefix='&')
 
@@ -93,5 +94,5 @@ async def new_week(ctx):
     channel = bot.get_channel(776518954461429811)
     await channel.send(default_message)
 
-  
+keep_alive()
 bot.run(os.environ.get('TOKEN'))
