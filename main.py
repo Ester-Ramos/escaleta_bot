@@ -7,6 +7,14 @@ from parser import Parser
 
 bot = commands.Bot(command_prefix='!')
 
+Authors = {
+    189850557245030410: "Ester",
+    460122607778398208: "Carmen",
+    370525554434244609: "Ale",
+    512733555772620819: "Jose",
+    507975905399013396: "Juan Pablo",
+}
+
 
 def get_thursday():
   today = date.today()
@@ -63,10 +71,12 @@ async def tema(ctx, section, *topic):
     topic = " ".join(topic)
     channel = bot.get_channel(776518954461429811)
 
+    author = Authors[ctx.message.author.id]
+
     last_message = await channel.fetch_message(channel.last_message_id)
     parsed_message = Parser(last_message.content)
     sections = parsed_message.sections
-    sections[section.upper()].append(topic)
+    sections[section.upper()].append(f"{topic} ({author})")
     new_message = create_new_message(parsed_message.date, sections)
     await last_message.edit(content=new_message)
 
