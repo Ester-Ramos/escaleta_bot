@@ -5,7 +5,7 @@ from datetime import date, timedelta, datetime
 import textwrap
 from parser import Parser
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='&')
 
 Authors = {
     189850557245030410: "Ester",
@@ -13,6 +13,8 @@ Authors = {
     370525554434244609: "Ale",
     512733555772620819: "Jose",
     507975905399013396: "Juan Pablo",
+    444561823342002187: "Abraham",
+    528941172174094336: "Marta",
 }
 
 
@@ -66,7 +68,7 @@ def create_new_message(date, sections):
     return "\n".join(parts)
 
 
-@bot.command(name="tema", help="Elige tema del que quieres hablar")
+@bot.command(name="tema", help="Elige tema del que quieres hablar y el contenido. Si el tema tiene mas de una palabra ponlo entre comillas ''")
 async def tema(ctx, section, *topic):
     topic = " ".join(topic)
     channel = bot.get_channel(776518954461429811)
@@ -76,7 +78,10 @@ async def tema(ctx, section, *topic):
     last_message = await channel.fetch_message(channel.last_message_id)
     parsed_message = Parser(last_message.content)
     sections = parsed_message.sections
-    sections[section.upper()].append(f"{topic} ({author})")
+    if section not in sections:
+        sections[section.upper()] = [f"{topic} ({author})"]
+    else:
+        sections[section.upper()].append(f"{topic} ({author})")
     new_message = create_new_message(parsed_message.date, sections)
     await last_message.edit(content=new_message)
     await ctx.message.add_reaction("👍")
