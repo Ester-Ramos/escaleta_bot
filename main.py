@@ -79,6 +79,7 @@ async def tema(ctx, section, *topic):
     sections[section.upper()].append(f"{topic} ({author})")
     new_message = create_new_message(parsed_message.date, sections)
     await last_message.edit(content=new_message)
+    await ctx.message.add_reaction("👍")
 
 
 @bot.command(name="new", help="Crea un template nuevo para esta semana.")
