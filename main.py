@@ -1,20 +1,21 @@
 import discord
 from discord.ext import commands
 import os
-import re
 from datetime import date, timedelta, datetime
 import textwrap
 from parser import Parser
 
-
-activity = discord.Activity(type=discord.ActivityType.listening, name="vuestros temillas")
+activity = discord.Activity(type=discord.ActivityType.listening,
+                            name="vuestros temillas")
 # Change only the no_category default string
 help_command = commands.DefaultHelpCommand(
-    no_category = 'Commands',
-    width = 120,
+    no_category='Commands',
+    width=120,
 )
 
-bot = commands.Bot(command_prefix='&', activity=activity, help_command=help_command)
+bot = commands.Bot(command_prefix='&',
+                   activity=activity,
+                   help_command=help_command)
 
 Authors = {
     189850557245030410: "Ester",
@@ -27,32 +28,15 @@ Authors = {
 }
 
 
-def get_thursday():
-  today = date.today()
-  offset = (3 - today.weekday()) % 7
-  next_thursday = today + timedelta(days=offset)
-  return datetime.strftime(next_thursday, "%d of %B") 
-
-default_message = textwrap.dedent(f"""
-  ```asciidoc
-  [{get_thursday()}]
-
-  = ACTUALIDAD =
-  - Actualidad de los panas
-
-  = NOTICIAS ESPAECIALES = 
- 
-  = PELIS =
-
-  = SERIES = 
-
-  = JUEGOS =
-  
-  ```
-  """)
+def get_next_thursday():
+    today = date.today()
+    offset = (3 - today.weekday()) % 7
+    next_thursday = today + timedelta(days=offset)
+    return datetime.strftime(next_thursday, "%d of %B")
 
 
-def create_new_message(date, sections):
+def create_new_message(ctx, date, sections):
+    
     parts = ["```asciidoc"]
     parts.append(f"[{date}]")
     parts.append("")
@@ -67,7 +51,11 @@ def create_new_message(date, sections):
     return "\n".join(parts)
 
 
-@bot.command(name="tema", help="Elige la seccion y el tema del que vas a hablar.\nSi la seccion tiene espacios ponla entre comillas.")
+@bot.command(
+    name="tema",
+    help=
+    "Elige la seccion y el tema del que vas a hablar.\nSi la seccion tiene espacios ponla entre comillas."
+)
 async def tema(ctx, section, *topic):
     topic = " ".join(topic)
     channel = bot.get_channel(776518954461429811)
@@ -76,37 +64,61 @@ async def tema(ctx, section, *topic):
 
     last_message = await channel.fetch_message(channel.last_message_id)
     parsed_message = Parser(last_message.content)
+    
+
+    if parsed_message.date != get_next_thursday():
+        ctx.send(f"Semana nueva! Creando '{get_next_thursday()}'")
+        new_week(ctx)
+        last_message = await channel.fetch_message(channel.last_message_id)
+        parsed_message = Parser(last_message.content)
+
     sections = parsed_message.sections
     if section.upper() not in sections:
         ctx.send(f"Creando seccion nueva: '{section}'")
         sections[section.upper()] = [f"{topic} ({author})"]
     else:
         sections[section.upper()].append(f"{topic} ({author})")
-    new_message = create_new_message(parsed_message.date, sections)
+    new_message = create_new_message(ctx, parsed_message.date, sections)
     await last_message.edit(content=new_message)
     await ctx.message.add_reaction("👍")
 
 
 @bot.command(name="new", help="Crea un template nuevo para esta semana.")
 async def new_week(ctx):
-  
-    channel = bot.get_channel(776518954461429811)
-    await channel.send(default_message)
 
-@bot.command(name="remove_topic", help="Indica el nombre de la seccion y el tema que quieres borrar")
+    channel = bot.get_channel(776518954461429811)
+    await channel.send(
+        textwrap.dedent(f"""
+    ```asciidoc
+    [{get_next_thursday()}]
+
+    = ACTUALIDAD =
+    - Actualidad de los panas
+ 
+    = PELIS =
+
+    = SERIES = 
+
+    = JUEGOS =
+  
+    ```
+    """))
+
+
+@bot.command(name="remove_topic",
+             help="Indica el nombre de la seccion y el tema que quieres borrar"
+             )
 async def remove_topic(ctx, section, *to_remove):
     to_remove = " ".join(to_remove)
     channel = bot.get_channel(776518954461429811)
-
-    author = Authors[ctx.message.author.id]
 
     last_message = await channel.fetch_message(channel.last_message_id)
     parsed_message = Parser(last_message.content)
     sections = parsed_message.sections
     if section.upper() not in sections:
-         await ctx.message.add_reaction("👎")
-         await ctx.send(f"La seccion: '{section}' no existe.")
-         return
+        await ctx.message.add_reaction("👎")
+        await ctx.send(f"La seccion: '{section}' no existe.")
+        return
 
     items = sections[section.upper()]
     sections[section.upper()] = [item for item in items if item != to_remove]
@@ -114,25 +126,24 @@ async def remove_topic(ctx, section, *to_remove):
     await last_message.edit(content=new_message)
     await ctx.message.add_reaction("👍")
 
-@bot.command(name="remove_section", help="Indica la seccion que quieres borrar")
+
+@bot.command(name="remove_section",
+             help="Indica la seccion que quieres borrar")
 async def remove_section(ctx, section):
     channel = bot.get_channel(776518954461429811)
-
-    author = Authors[ctx.message.author.id]
 
     last_message = await channel.fetch_message(channel.last_message_id)
     parsed_message = Parser(last_message.content)
     sections = parsed_message.sections
     if section.upper() not in sections:
-         await ctx.message.add_reaction("👎")
-         await ctx.send(f"La seccion: '{section}' no existe.")
-         return
+        await ctx.message.add_reaction("👎")
+        await ctx.send(f"La seccion: '{section}' no existe.")
+        return
 
     del sections[section.upper()]
     new_message = create_new_message(parsed_message.date, sections)
     await last_message.edit(content=new_message)
     await ctx.message.add_reaction("👍")
-
 
 
 if __name__ == "__main__":
