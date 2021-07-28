@@ -4,7 +4,6 @@ import re
 from datetime import date, timedelta, datetime
 import textwrap
 from parser import Parser
-from keep_alive import keep_alive
 
 bot = commands.Bot(command_prefix='&')
 
@@ -43,16 +42,6 @@ default_message = textwrap.dedent(f"""
   ```
   """)
 
-def parse_message(message):
-    parser = re.compile(".*= (.*?) =\s*(- [^=`]*)*", re.DOTALL)
-
-    parsed_message = {
-      section.lower(): [
-        element for element in contents.strip().split("\n") if element
-      ] for section, contents in parser.findall(message)
-    }
-
-    return parsed_message
 
 def create_new_message(date, sections):
     parts = ["```asciidoc"]
@@ -79,7 +68,7 @@ async def tema(ctx, section, *topic):
     last_message = await channel.fetch_message(channel.last_message_id)
     parsed_message = Parser(last_message.content)
     sections = parsed_message.sections
-    if section not in sections:
+    if section.upper() not in sections:
         sections[section.upper()] = [f"{topic} ({author})"]
     else:
         sections[section.upper()].append(f"{topic} ({author})")
@@ -94,5 +83,44 @@ async def new_week(ctx):
     channel = bot.get_channel(776518954461429811)
     await channel.send(default_message)
 
-keep_alive()
-bot.run(os.environ.get('TOKEN'))
+@bot.command(name="remove_topic", help="")
+async def remove_topic(ctx, section, *to_remove):
+    to_remove = " ".join(to_remove)
+    channel = bot.get_channel(776518954461429811)
+
+    author = Authors[ctx.message.author.id]
+
+    last_message = await channel.fetch_message(channel.last_message_id)
+    parsed_message = Parser(last_message.content)
+    sections = parsed_message.sections
+    if section.upper() not in sections:
+         await ctx.message.add_reaction("👎")
+         return
+
+    items = sections[section.upper()]
+    sections[section.upper()] = [item for item in items if item != to_remove]
+    new_message = create_new_message(parsed_message.date, sections)
+    await last_message.edit(content=new_message)
+    await ctx.message.add_reaction("👍")
+
+@bot.command(name="remove_section", help="")
+async def remove_section(ctx, section):
+    channel = bot.get_channel(776518954461429811)
+
+    author = Authors[ctx.message.author.id]
+
+    last_message = await channel.fetch_message(channel.last_message_id)
+    parsed_message = Parser(last_message.content)
+    sections = parsed_message.sections
+    if section.upper() not in sections:
+         await ctx.message.add_reaction("👎")
+         return
+
+    del sections[section.upper()]
+    new_message = create_new_message(parsed_message.date, sections)
+    await last_message.edit(content=new_message)
+    await ctx.message.add_reaction("👍")
+
+
+if __name__ == "__main__":
+    bot.run(os.environ.get('TOKEN'))
