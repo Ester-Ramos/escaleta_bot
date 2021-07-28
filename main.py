@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 import os
 import re
@@ -5,7 +6,15 @@ from datetime import date, timedelta, datetime
 import textwrap
 from parser import Parser
 
-bot = commands.Bot(command_prefix='&')
+
+activity = discord.Activity(type=discord.ActivityType.listening, name="vuestros temillas")
+# Change only the no_category default string
+help_command = commands.DefaultHelpCommand(
+    no_category = 'Commands',
+    width = 120,
+)
+
+bot = commands.Bot(command_prefix='&', activity=activity, help_command=help_command)
 
 Authors = {
     189850557245030410: "Ester",
@@ -58,7 +67,7 @@ def create_new_message(date, sections):
     return "\n".join(parts)
 
 
-@bot.command(name="tema", help="Elige tema del que quieres hablar y el contenido. Si el tema tiene mas de una palabra ponlo entre comillas ''")
+@bot.command(name="tema", help="Elige la seccion y el tema del que vas a hablar.\nSi la seccion tiene espacios ponla entre comillas.")
 async def tema(ctx, section, *topic):
     topic = " ".join(topic)
     channel = bot.get_channel(776518954461429811)
@@ -69,6 +78,7 @@ async def tema(ctx, section, *topic):
     parsed_message = Parser(last_message.content)
     sections = parsed_message.sections
     if section.upper() not in sections:
+        ctx.send(f"Creando seccion nueva: '{section}'")
         sections[section.upper()] = [f"{topic} ({author})"]
     else:
         sections[section.upper()].append(f"{topic} ({author})")
@@ -83,7 +93,7 @@ async def new_week(ctx):
     channel = bot.get_channel(776518954461429811)
     await channel.send(default_message)
 
-@bot.command(name="remove_topic", help="")
+@bot.command(name="remove_topic", help="Indica el nombre de la seccion y el tema que quieres borrar")
 async def remove_topic(ctx, section, *to_remove):
     to_remove = " ".join(to_remove)
     channel = bot.get_channel(776518954461429811)
@@ -95,6 +105,7 @@ async def remove_topic(ctx, section, *to_remove):
     sections = parsed_message.sections
     if section.upper() not in sections:
          await ctx.message.add_reaction("👎")
+         await ctx.send(f"La seccion: '{section}' no existe.")
          return
 
     items = sections[section.upper()]
@@ -103,7 +114,7 @@ async def remove_topic(ctx, section, *to_remove):
     await last_message.edit(content=new_message)
     await ctx.message.add_reaction("👍")
 
-@bot.command(name="remove_section", help="")
+@bot.command(name="remove_section", help="Indica la seccion que quieres borrar")
 async def remove_section(ctx, section):
     channel = bot.get_channel(776518954461429811)
 
@@ -114,12 +125,14 @@ async def remove_section(ctx, section):
     sections = parsed_message.sections
     if section.upper() not in sections:
          await ctx.message.add_reaction("👎")
+         await ctx.send(f"La seccion: '{section}' no existe.")
          return
 
     del sections[section.upper()]
     new_message = create_new_message(parsed_message.date, sections)
     await last_message.edit(content=new_message)
     await ctx.message.add_reaction("👍")
+
 
 
 if __name__ == "__main__":
