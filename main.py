@@ -35,7 +35,7 @@ def get_next_thursday():
     return datetime.strftime(next_thursday, "%d of %B")
 
 
-def create_new_message(ctx, date, sections):
+def create_new_message(date, sections):
     
     parts = ["```asciidoc"]
     parts.append(f"[{date}]")
@@ -78,7 +78,7 @@ async def tema(ctx, section, *topic):
         sections[section.upper()] = [f"{topic} ({author})"]
     else:
         sections[section.upper()].append(f"{topic} ({author})")
-    new_message = create_new_message(ctx, parsed_message.date, sections)
+    new_message = create_new_message(parsed_message.date, sections)
     await last_message.edit(content=new_message)
     await ctx.message.add_reaction("👍")
 
