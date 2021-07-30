@@ -64,17 +64,19 @@ async def tema(ctx, section, *topic):
 
     last_message = await channel.fetch_message(channel.last_message_id)
     parsed_message = Parser(last_message.content)
+    print(f"fecha actual: {parsed_message.date}")
+    print(f"siguiente Jueves: {get_next_thursday()}")
     
 
     if parsed_message.date != get_next_thursday():
-        ctx.send(f"Semana nueva! Creando '{get_next_thursday()}'")
-        new_week(ctx)
+        await ctx.send(f"Semana nueva! Creando '{get_next_thursday()}'")
+        await new_week(ctx)
         last_message = await channel.fetch_message(channel.last_message_id)
         parsed_message = Parser(last_message.content)
 
     sections = parsed_message.sections
     if section.upper() not in sections:
-        ctx.send(f"Creando seccion nueva: '{section}'")
+        await ctx.send(f"Creando seccion nueva: '{section}'")
         sections[section.upper()] = [f"{topic} ({author})"]
     else:
         sections[section.upper()].append(f"{topic} ({author})")
