@@ -4,6 +4,14 @@ import os
 from datetime import date, timedelta, datetime
 import textwrap
 from parser import Parser
+import requests
+
+
+r = requests.head(url="https://discord.com/api/v1")
+try:
+    print(f"Rate limit {int(r.headers['Retry-After']) / 60} minutes left")
+except:
+    print("No rate limit")
 
 activity = discord.Activity(type=discord.ActivityType.listening,
                             name="vuestros temillas")
@@ -24,15 +32,16 @@ Authors = {
     512733555772620819: "Jose",
     507975905399013396: "Juan Pablo",
     444561823342002187: "Abraham",
+    816342067814072320: "Abraham",
     528941172174094336: "Marta",
 }
 
 
-def get_next_thursday():
+def get_next_sunday():
     today = date.today()
-    offset = (3 - today.weekday()) % 7
-    next_thursday = today + timedelta(days=offset)
-    return datetime.strftime(next_thursday, "%d of %B")
+    offset = (6 - today.weekday()) % 7
+    next_sunday = today + timedelta(days=offset)
+    return datetime.strftime(next_sunday, "%d of %B")
 
 
 def create_new_message(date, sections):
@@ -64,12 +73,9 @@ async def tema(ctx, section, *topic):
 
     last_message = await channel.fetch_message(channel.last_message_id)
     parsed_message = Parser(last_message.content)
-    print(f"fecha actual: {parsed_message.date}")
-    print(f"siguiente Jueves: {get_next_thursday()}")
-    
 
-    if parsed_message.date != get_next_thursday():
-        await ctx.send(f"Semana nueva! Creando '{get_next_thursday()}'")
+    if parsed_message.date != get_next_sunday():
+        await ctx.send(f"Semana nueva! Creando '{get_next_sunday()}'")
         await new_week(ctx)
         last_message = await channel.fetch_message(channel.last_message_id)
         parsed_message = Parser(last_message.content)
@@ -92,7 +98,7 @@ async def new_week(ctx):
     await channel.send(
         textwrap.dedent(f"""
     ```asciidoc
-    [{get_next_thursday()}]
+    [{get_next_sunday()}]
 
     = ACTUALIDAD =
     - Actualidad de los panas
